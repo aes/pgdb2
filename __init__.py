@@ -275,8 +275,6 @@ class CachedQuery( list ):
     def __len__(self,*x):      self.refresh();return list.__len__(self, *x)
 
 if __name__ == '__main__':
-    import sys, logging
+    import sys, logging, doctest
     logging.basicConfig(stream=sys.stdout, format='%(levelname)s %(message)s')
-    import doctest
     doctest.testmod()
-
