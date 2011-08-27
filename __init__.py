@@ -133,6 +133,9 @@ class DSQuery( object ):
         log.exception(x)
         raise x
     def __call__(self, *al, **d):
+        if not d and len(al) == 1:
+            if   isinstance(al[0], dict ): d = al[0]
+            elif isinstance(al[0], list ): al = al[0]
         _retry = d.pop('_retry', 0)
         if not d and al:
             d = dict((zip([k for k,f in self.keys], al)))
@@ -223,9 +226,16 @@ def Query(sql, keys=(), defaults={}, autocommit=True):
     >>> q1 = Query('SELECT 1 AS x;')
     >>> q1()
     [{'x': 1}]
-    >>> q2 = Query("SELECT (%s)::real AS x", [('x', str)], {'x': '42'})
-    >>> q2(1.99)
-    [{'x': 1.99}]
+    >>> q2 = Query("SELECT (%s)::real AS x",
+    ...            [('a', str)], {'a': '42'})
+    >>> q2({'a': 12})
+    [{'x': 12.0}]
+    >>> q2(a=13)
+    [{'x': 13.0}]
+    >>> q2(14)
+    [{'x': 14.0}]
+    >>> q2()
+    [{'x': 42.0}]
     """
     global module_ds
     if not module_ds:
