@@ -263,11 +263,18 @@ class CachedQuery( list ):
         self.q, self.to, self.f, self.t = q, to, f, 0
         self.refresh()
     def refresh(self):
-        t = time.time()
-        if t - self.t > self.to:
-            log.info('REFRESH: '+str(self.q))
-            try:    self.t, self[:] = t, map(self.f, self.q())
-            except: self[:] = []
+        log.info('REFRESH: '+str(self.q))
+        try:
+            self.t, l = time.time(), map(self.f, self.q())
+        except Exception, x:
+            log.exception(x)
+            l = []
+        self[:] = l
+        log.debug('REFRESH: len: %d', len(l))
+    def check(self):
+        log.debug('CHECK: '+str(self.q))
+        if time.time() - self.t > self.to:
+            self.refresh()
     def __getitem__(self, *x): self.refresh();return list.__getitem__(self,*x)
     def __getslice__(self,*x): self.refresh();return list.__getslice__(self,*x)
     def __repr__(self,*x):     self.refresh();return list.__repr__(self, *x)
