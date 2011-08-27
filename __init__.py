@@ -132,10 +132,14 @@ class DSQuery( object ):
         log.error('Exception occured when executing query.')
         log.exception(x)
         raise x
-    def __call__(self, d={}, retry=1):
+    def __call__(self, *al, **d):
+        _retry = d.pop('_retry', 0)
+        if not d and al:
+            d = dict((zip([k for k,f in self.keys], al)))
         prep = self.prep_list(d)
         if log.isEnabledFor(logging.DEBUG):
             log.debug('pre-prep:  %r' % self.sql)
+            log.debug('pre-prep:  %r' % prep)
         con = None
         try:
             con = self.pool.getconn()
@@ -152,11 +156,12 @@ class DSQuery( object ):
             return ret
         except pg.OperationalError, x:
             log.warning(x)
-            if retry:
+            if _retry:
                 con.close()
                 self.pool.putconn(con)
                 log.warning('con was closed, reconnecting... ')
-                return self(d, retry-1)
+                d.update(_retry=_retry-1)
+                return self(**d)
             else:
                 log.warning('con was closed, NOT reconnecting.')
                 raise
@@ -172,10 +177,12 @@ class DSCompatQuery( DSQuery ):
 
     The only overridden method here is __call__.
     """
-    def __call__(self, d={}, retry=1):
+    def __call__(self, *al, **d):
         "Implements old behaviour, returning actual dicts and -1 on errors."
-        try:    return [ dict(e) for e in DSQuery.__call__(self, d, retry) ]
-        except: return -1
+        try:    return [ dict(e) for e in DSQuery.__call__(self, *al, **d) ]
+        except Exception, x:
+            log.exception(x)
+            return -1
 
 class DataSource( pool.ThreadedConnectionPool ):
     """PsycoPg2 ThreadedConnectionPool subclass that creates DSQuery functors.
@@ -216,6 +223,9 @@ def Query(sql, keys=(), defaults={}, autocommit=True):
     >>> q1 = Query('SELECT 1 AS x;')
     >>> q1()
     [{'x': 1}]
+    >>> q2 = Query("SELECT (%s)::real AS x", [('x', str)], {'x': '42'})
+    >>> q2(1.99)
+    [{'x': 1.99}]
     """
     global module_ds
     if not module_ds:
