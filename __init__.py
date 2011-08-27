@@ -123,15 +123,6 @@ class DSQuery( object ):
             log.error('Exception occured when preparing arguments.')
             log.exception(x)
             raise
-    def _handle_exception(self, con, x, z=0):
-        try:
-            if con:
-                con.rollback()
-                self.pool.putconn(con)
-        except: pass
-        log.error('Exception occured when executing query.')
-        log.exception(x)
-        raise x
     def __call__(self, *al, **d):
         if not d and len(al) == 1:
             if   isinstance(al[0], dict ): d = al[0]
