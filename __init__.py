@@ -101,6 +101,10 @@ class DSQuery( object ):
       2. The keys need not be strings and
       3. The functions need not be constructors; notably, they can return None
     """
+    @staticmethod
+    def dmap(f, d):
+        if isinstance(d, dict ): return dict([(k,f(k,v)) for k,v in d.items()])
+        else:                    return [f(*kv) for kv in d]
     def __init__(self, pool, sql, keys=(), defaults={}, autocommit=True):
         # There should be a nice trick for this, like __dict__ = dict(locals())
         self.sql, self.keys, self.defaults = sql, keys, defaults
@@ -115,10 +119,10 @@ class DSQuery( object ):
         try:
             if isinstance( d, dict ):
                 e.update(d)                               # override defaults
-                l = [ f(e.get(k)) for k, f in self.keys ] # unroll args
+                g = lambda k, f: f(e.get(k))              # unroll args
             else:                                         # assume obj instead
-                l = [ f( getattr(d, k, e.get(k)) ) for k, f in self.keys ]
-            return l
+                g = lambda k, f: f(getattr(d, k, e.get(k)))
+            return self.dmap(g, self.keys)
         except Exception, x:
             log.error('Exception occured when preparing arguments.')
             log.exception(x)
@@ -128,7 +132,7 @@ class DSQuery( object ):
             if   isinstance(al[0], dict ): d = al[0]
             elif isinstance(al[0], list ): al = al[0]
         _retry = d.pop('_retry', 0)
-        if not d and al:
+        if not d and al and not isinstance(self.keys, dict ):
             d = dict((zip([k for k,f in self.keys], al)))
         prep = self.prep_list(d)
         if log.isEnabledFor(logging.DEBUG):
@@ -227,6 +231,10 @@ def Query(sql, keys=(), defaults={}, autocommit=True):
     [{'x': 14.0}]
     >>> q2()
     [{'x': 42.0}]
+    >>> q3 = Query("SELECT %(y)s AS y, %(x)s AS x",
+    ...            {'x': nop, 'y': nop}, {'x': 1})
+    >>> q3(y=2)
+    [{'y': 2, 'x': 1}]
     """
     global module_ds
     if not module_ds:
