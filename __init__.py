@@ -70,7 +70,7 @@ def nop(x):
     """Identity transform"""
     return x
 
-def null(t):
+def null_on_fail(t):
     """Creates a converter to type-or-null"""
     def f(x):
         try:    return t(x)
