@@ -275,11 +275,17 @@ class CachedQuery( list ):
         log.debug('CHECK: '+str(self.q))
         if time.time() - self.t > self.to:
             self.refresh()
-    def __getitem__(self, *x): self.refresh();return list.__getitem__(self,*x)
-    def __getslice__(self,*x): self.refresh();return list.__getslice__(self,*x)
-    def __repr__(self,*x):     self.refresh();return list.__repr__(self, *x)
-    def __str__(self,*x):      self.refresh();return list.__str__(self, *x)
-    def __len__(self,*x):      self.refresh();return list.__len__(self, *x)
+    def _checked(method):
+        def m(self, *al, **kw):
+            self.check()
+            return method(self, *al, **kw)
+        return m
+    def __repr__(self):
+        return 'CachedQuery(%r, %r, %r)' % (self.q, self.to, self.f)
+    __getitem__  = _checked(list.__getitem__)
+    __getslice__ = _checked(list.__getslice__)
+    __str__      = _checked(list.__str__)
+    __len__      = _checked(list.__len__)
 
 if __name__ == '__main__':
     import sys, logging, doctest
