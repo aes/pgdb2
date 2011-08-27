@@ -46,7 +46,7 @@ Originally created by Anders Eurenius and Ulf Renman at [Favoptic](1) in '07
 or '06. The code has been significantly reworked since, but the query functor
 concept is essentially unchanged
 
-(c) 2007 Favoptic GlasÅˆgondirekt AB
+(c) 2007 Favoptic Glas√∂gondirekt AB
 
 (c) 2007- Anders Eurenius <aes@nerdshack.com>
 
