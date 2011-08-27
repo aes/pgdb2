@@ -145,8 +145,8 @@ class DSQuery( object ):
                 log.debug('query:     %r' % cur.query)
                 log.debug('status:    %r' % cur.statusmessage)
                 log.debug('row count: %d' % cur.rowcount)
-            if cur.statusmessage == 'SELECT': ret = cur.fetchall()
-            else:                             ret = cur.rowcount
+            if cur.description: ret = cur.fetchall()
+            else:               ret = cur.rowcount
             if self.autocommit: con.commit()
             self.pool.putconn(con)
             return ret
